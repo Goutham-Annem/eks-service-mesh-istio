@@ -1,0 +1,38 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: my-service
+  namespace: production
+spec:
+  host: my-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 5s
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+        idleTimeout: 60s
+    outlierDetection:
+      consecutive5xxErrors: 3
+      consecutiveGatewayErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+      retryOn: "gateway-error,connect-failure,retriable-4xx"
+  subsets:
+    - name: stable
+      labels:
+        version: stable
+      trafficPolicy:
+        loadBalancer:
+          simple: LEAST_CONN
+    - name: canary
+      labels:
+        version: canary
